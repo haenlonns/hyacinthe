@@ -1,2 +1,11 @@
 requests
 python-dotenv
+wheel
+torch 
+torchvision 
+torchaudio
+roboflow
+opencv-python
+ultralytics
+openai-whisper
+TTS
