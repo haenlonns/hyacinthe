@@ -1,0 +1,6 @@
+torch 
+torchvision 
+torchaudio
+roboflow
+opencv-python
+ultralytics
