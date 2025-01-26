@@ -14,3 +14,4 @@ opencv-python
 ultralytics
 python-doctr
 openai
+python-dotenv
