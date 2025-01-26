@@ -8,7 +8,6 @@ import queue
 from PIL import Image
 import pytesseract
 import numpy as np
-import imutils
 
 class VideoStream:
     def __init__(self):
@@ -20,9 +19,7 @@ class VideoStream:
         self.ids = defaultdict(int)
         self.allowed_chars = r"[^a-zA-Z0-9]"
         self.cap = (
-            cv2.VideoCapture(1)
-            if cv2.VideoCapture(1).isOpened()
-            else cv2.VideoCapture(0)
+            cv2.VideoCapture(0)
         )
         self.text_queue = queue.Queue()
         self.executor = ThreadPoolExecutor(
@@ -49,7 +46,7 @@ class VideoStream:
                 persist=True,
                 verbose=False,
                 tracker="bytetrack.yaml",
-                show=True,
+                show=False,  # Set show to False to avoid display issues
                 conf=0.65,
             )
 

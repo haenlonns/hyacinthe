@@ -11,4 +11,19 @@ if __name__ == "__main__":
     video_stream = VideoStream()
     decision_manager = DecisionManager(stt_engine, tts_engine, video_stream)
 
+    decision_manager.add_location(2, "left")
+    decision_manager.add_location(1, "right")
+
+    decision_thread = threading.Thread(target=decision_manager.run)
+    decision_thread.start()
+
+    # Keep the main thread alive
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        print("Exiting program...")
+        decision_manager.navigation_cancelled.set()
+        decision_thread.join()
+
     

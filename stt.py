@@ -1,4 +1,5 @@
 import speech_recognition as sr
+from tts import TTSEngine
 
 class STTEngine:
     def __init__(self, wake_word="hey assistant", exit_word="goodbye"):
@@ -12,7 +13,6 @@ class STTEngine:
         with self.microphone as source:
             print("Adjusting for ambient noise...")
             self.recognizer.adjust_for_ambient_noise(source, duration=1)
-        print("Ready to listen!")
 
     def listen(self):
         """Continuously listen and yield the recognized commands."""
@@ -21,7 +21,7 @@ class STTEngine:
             while True:
                 try:
                     # Listen continuously
-                    audio = self.recognizer.listen(source, phrase_time_limit=10)
+                    audio = self.recognizer.listen(source, phrase_time_limit=20)
                     text: str = self.recognizer.recognize_google(audio)
 
                     # Recognize speech
