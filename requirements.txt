@@ -13,3 +13,4 @@ roboflow
 opencv-python
 ultralytics
 python-doctr
+ollama
