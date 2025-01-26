@@ -1,9 +1,9 @@
-import os
 import re
 from ultralytics import YOLO
 import cv2
 from doctr.models import ocr_predictor
 import threading
+import ollama
 
 # Initialize the OCR model
 model = ocr_predictor(pretrained=True)
@@ -12,6 +12,16 @@ model = ocr_predictor(pretrained=True)
 trained = YOLO('sign.pt')
 
 ids = {}
+
+def interpret_sign(text, position):
+    response = ollama.chat(
+        model='llama3.2',
+        messages=[{
+            'role': 'user',
+            'content': 'Based on the information you have, what is ? Respond in the form: "The sign is a [sign type] sign. The room unmber is [room number]. The room name is [room name]."'
+        }]
+    )
+    print(response)
 
 def threaded_detect(cap):
     while True:
@@ -68,8 +78,9 @@ def crop_and_detect_text(frame, box):
                 text += "\n"
 
     
-    print(re.sub(r'[^a-zA-Z0-9]', '', text))
-
+    interpret_sign_thread = threading.Thread(target=interpret_sign, args=(re.sub(r'[^a-zA-Z0-9]', '', text,), (x1+x2)/2 < cap.get(3)/2))
+    interpret_sign_thread.start()
+    
 
 if __name__ == "__main__":
     # Open the webcam
