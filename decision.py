@@ -1,4 +1,6 @@
 import threading
+from constants import *
+from openai import find_closest_command
 
 class Location:
     def __init__(self, value, position):
@@ -6,6 +8,9 @@ class Location:
         self.position = position
 
 class DecisionManager:
+
+    commands = [SURROUNDINGS, NAVIGATE, TRYAGAIN]
+
     def __init__(self, STT, TTS, video_stream):
         self.locations = []
         self.vision = video_stream
@@ -26,10 +31,19 @@ class DecisionManager:
         for result in self.vision.threaded_detect():
             self.add_location(result)
     
+    def navigate(self):
+        
+
     def run_stt(self):
         for command in self.STT.listen():
-            if("where am i" in command.lower()):
+            closest_command = find_closest_command(command, self.commands)
+            if(closest_command == NAVIGATE):
+                self.navigate()
+            if(closest_command == SURROUNDINGS):
                 self.TTS.say(self.get_surrounding_locations())
+            if(closest_command == TRYAGAIN):
+                self.TTS.say("I'm sorry, I didn't understand that. Please try again.")
+            
 
     def run(self):
         # Create and start threads for vision detection and voice command listening

@@ -24,4 +24,19 @@ def get_room_information(base64_image, position):
         max_tokens=300
     )
 
+    return response
+
+def find_closest_command(command, commands):
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages = [
+            {"role": "system", "content": "The user is asking for a command that is similar to the one they provided. Out of the provided list, pick command a command from the list that is most similar to the one they provided. If none match, pick the final item in the list. Respond only with one command spelled exactly like the command list."},
+            {"role": "user", "content": "List of commands: " + ", ".join(commands) + "." + f"User command: {command}"}
+        ],
+        max_tokens=300
+    )
+
     return response.choices[0].message.content
+
+if __name__ == "__main__":
+    print(find_closest_command("bleh bleh bleh", ["where am I", "help me find room", "try again"]))
