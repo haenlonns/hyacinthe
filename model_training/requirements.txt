@@ -4,3 +4,4 @@ torchaudio
 roboflow
 opencv-python
 ultralytics
+llama-stack
