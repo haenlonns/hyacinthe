@@ -18,9 +18,7 @@ class VideoStream:
         self.trained = YOLO("sign.pt")
         self.ids = defaultdict(int)
         self.allowed_chars = r"[^a-zA-Z0-9]"
-        self.cap = (
-            cv2.VideoCapture(0)
-        )
+        self.cap = cv2.VideoCapture(0)
         self.text_queue = queue.Queue()
         self.executor = ThreadPoolExecutor(
             max_workers=3
@@ -90,7 +88,12 @@ class VideoStream:
             image_text = pytesseract.image_to_string(
                 processed_image, lang="eng", config=custom_config
             )
-            print(f"OCR text: {image_text}")
+            if(image_text != ""):
+                x1, y1, x2, y2 = map(int, box)
+                if(((x1 + x2)/2) < frame.get(3)/2):
+                    return [image_text, "left"]
+                else:
+                    return [image_text, "right"]
         else:
             print("Skipping OCR due to preprocessing error.")
 

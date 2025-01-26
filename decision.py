@@ -35,7 +35,7 @@ class DecisionManager:
 
     def run_vision(self):
         for result in self.vision.threaded_detect():
-            self.add_location(result)
+            self.add_location(Location(result[0], result[1]))
 
     def navigate(self, destination):
         self.TTS.say(f"Navigating to room {destination}.")
