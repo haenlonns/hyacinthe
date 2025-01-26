@@ -1,7 +1,0 @@
-torch 
-torchvision 
-torchaudio
-roboflow
-opencv-python
-ultralytics
-python-doctr

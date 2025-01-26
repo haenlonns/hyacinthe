@@ -9,3 +9,7 @@ pyaudio
 soundfile==0.12.1
 pyttsx3
 pyautogui
+roboflow
+opencv-python
+ultralytics
+python-doctr
