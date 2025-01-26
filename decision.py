@@ -18,12 +18,29 @@ class DecisionManager:
             self.locations.pop()
 
     def get_surrounding_locations(self):
+        if(len(self.locations) == 0):
+            return "I don't see any locations."
+        elif(len(self.locations) == 1):
+            return f"You have {self.locations[0].value} on your {self.locations[0].position}."
         return f"You have {self.locations[0].value} on your {self.locations[0].position} and {self.locations[1].value} on your {self.locations[1].position}." 
 
-    def run(self):
-        vision_thread = threading.Thread(target=self.vision.threaded_detect)
-        vision_thread.start()
-
-        for command in self.stt_engine.listen():
+    def run_vision(self):
+        for result in self.vision.threaded_detect():
+            print(result)
+    
+    def run_stt(self):
+        for command in self.STT.listen():
             if("where am i" in command.lower()):
                 self.TTS.say(self.get_surrounding_locations())
+
+    def run(self):
+        # Create and start threads for vision detection and voice command listening
+        vision_thread = threading.Thread(target=self.run_vision)
+        voice_thread = threading.Thread(target=self.run_stt)
+
+        vision_thread.start()
+        voice_thread.start()
+
+        # Wait for both threads to complete
+        vision_thread.join()
+        voice_thread.join()
