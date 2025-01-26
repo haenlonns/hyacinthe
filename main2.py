@@ -1,9 +1,10 @@
 import re
 from ultralytics import YOLO
 import cv2
-from doctr.models import ocr_predictor
+import base64
 import threading
 import ollama
+from OpenAIUtil import get_room_information
 
 # Initialize the OCR model
 model = ocr_predictor(pretrained=True)
@@ -12,34 +13,6 @@ model = ocr_predictor(pretrained=True)
 trained = YOLO('sign.pt')
 
 ids = {}
-
-def interpret_sign(text, position):
-    content = """
-        Given this OCR text output ({text}) containing a concatenated room name and number with potential typos, process the text to extract and correct the room name and number. Ensure the following steps are taken:
-        Extract Information: Use regular expressions to separate the room name and number from a concatenated string (e.g., "lacture2024" should be parsed into "lacture" and "2024").
-        Identify and Correct Typos: Check the extracted room name for common OCR errors and correct them based on a predefined list of known room names (e.g., "lacture" should be corrected to "lecture"). Use a dictionary approach where each misspelled word has a corresponding correct spelling.
-        Format Output: Combine the corrected room name and number into a standard format (e.g., "Lecture Hall 2024"). If the room name does not match any entry in the known list, return an empty string.
-        Return Result: Output the formatted string if corrections are successful and valid; otherwise, return an empty string if the room name cannot be validated.
-
-            Example Input: "men2024"
-            Expected Output: "Men's Room 2024"
-
-            Example Input: "lacture2034"
-            Expected Output: "Lecture Hall 2034"
-
-            Example Input: "confrence3001"
-            Expected Output: "Conference Room 3001"
-        """.format(text=text)
-        
-    response = ollama.chat(
-        model='llama3.2',
-        messages=[{
-            'role': 'user',
-            'content': content
-        }]
-    )
-    print(content)
-    print(response)
 
 def threaded_detect(cap):
     while True:
@@ -78,26 +51,18 @@ def crop_and_detect_text(frame, box):
     cropped_object = frame[y1:y2, x1:x2]
 
     # Convert the cropped image to RGB
-    cropped_object_rgb = cv2.cvtColor(cropped_object, cv2.COLOR_BGR2RGB)
+    # Encode the cropped image to JPG format
+    _, encoded_image = cv2.imencode('.jpg', cropped_object)
 
-    # Use doctr to predict text
-    response = model([cropped_object_rgb])
+    # Convert encoded image to bytes, then to base64
+    jpg_as_bytes = encoded_image.tobytes()
+    base64_encoded_image = base64.b64encode(jpg_as_bytes)
+
+    # If you need it as a string
+    base64_image_string = base64_encoded_image.decode('utf-8')
     
-    text = ""
-
-    for page in response.pages:
-        for block in page.blocks:
-            for line in block.lines:
-                for word in line.words:
-                    if(word.confidence > 0.5):
-                        text += word.value
-                text += "\n"
-                
-    print(re.sub(r'[^a-zA-Z0-9]', '', text))
-
-    if(text != ""):
-        interpret_sign_thread = threading.Thread(target=interpret_sign, args=(re.sub(r'[^a-zA-Z0-9]', '', text,), (x1+x2)/2 < cap.get(3)/2))
-        interpret_sign_thread.start()
+    get_room_information(base64_image_string, (x1+x2)/2 < cap.get(3)/2)
+    
     
 
 if __name__ == "__main__":
