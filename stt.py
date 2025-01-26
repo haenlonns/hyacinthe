@@ -21,7 +21,7 @@ class STTEngine:
             while True:
                 try:
                     # Listen continuously
-                    audio = self.recognizer.listen(source, phrase_time_limit=10)
+                    audio = self.recognizer.listen(source, phrase_time_limit=20)
                     text: str = self.recognizer.recognize_google(audio)
 
                     # Recognize speech

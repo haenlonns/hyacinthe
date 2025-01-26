@@ -26,8 +26,8 @@ class DecisionManager:
         if len(self.locations) == 0:
             return "I don't see any locations. Please walk around more!"
         elif len(self.locations) == 1:
-            return f"You have {self.locations[0].value} on your {self.locations[0].position}."
-        return f"You have {self.locations[0].value} on your {self.locations[0].position} and {self.locations[1].value} on your {self.locations[1].position}."
+            return f"You have room {self.locations[0].value} on your {self.locations[0].position}."
+        return f"You have room {self.locations[0].value} on your {self.locations[0].position} and room {self.locations[1].value} on your {self.locations[1].position}."
 
     def alert_on_detection(self, box):
         # This function will be called whenever an object is detected
@@ -41,6 +41,7 @@ class DecisionManager:
         self.TTS.say(f"Navigating to room {destination}.")
         while not self.navigation_cancelled.is_set():
             # Simulate navigation process
+            right_way = False
             if len(self.locations) < 1:
                 self.TTS.say("I'm sorry, I do not know where you are. Please walk around a bit more so I can find where you are. Then try navigating again.")
                 return
@@ -48,9 +49,13 @@ class DecisionManager:
                 if self.locations[0].value == destination:
                     self.TTS.say(f"Arrived at room {destination}.")
                     return
-                elif abs(self.locations[0].value - destination) < abs(self.locations[1].value - destination):
-                    self.TTS.say("You are going the wrong way. Turn around.")
+                elif abs(self.locations[0].value - destination) > abs(self.locations[1].value - destination):
+                    if(right_way == True):
+                        self.TTS.say("You are going the wrong way. Turn around.")
+                    right_way = False
                 else:
+                    if(right_way == False):
+                        right_way = True
                     self.TTS.say("You are going the right way. Keep going.")
             self.navigation_cancelled.wait(1)  # Check for cancellation every second
         self.TTS.say("Navigation cancelled.")
@@ -76,7 +81,7 @@ class DecisionManager:
                 self.navigation_cancelled.set()
                 self.TTS.say("Navigation cancelled.")
             elif closest_command == "TRYAGAIN":
-                self.TTS.say("I'm sorry, I didn't understand that. Please try again.")
+                self.TTS.say("I am sorry, I didn't understand that. Please try again.")
 
     def run(self):
         # Create and start threads for vision detection and voice command listening

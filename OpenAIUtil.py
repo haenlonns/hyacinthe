@@ -25,6 +25,7 @@ def get_room_number(command):
     return int(response.choices[0].message.content)
 
 def find_closest_command(command, commands):
+    print(command)
     response = client.chat.completions.create(
         model="gpt-4o",
         messages = [
