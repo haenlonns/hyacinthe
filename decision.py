@@ -5,7 +5,7 @@ class Location:
         self.value = value
         self.position = position
 
-class InformationManager:
+class DecisionManager:
     def __init__(self, STT, TTS, video_stream):
         self.locations = []
         self.vision = video_stream
@@ -23,7 +23,7 @@ class InformationManager:
     def run(self):
         vision_thread = threading.Thread(target=self.vision.threaded_detect)
         vision_thread.start()
-        
+
         for command in self.stt_engine.listen():
             if("where am i" in command.lower()):
                 self.TTS.say(self.get_surrounding_locations())
