@@ -10,11 +10,10 @@ import pytesseract
 import numpy as np
 import imutils
 
-
 class VideoStream:
     def __init__(self):
         pytesseract.pytesseract.tesseract_cmd = (
-            r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+            r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"
         )
         self.model = ocr_predictor(pretrained=True)
         self.trained = YOLO("sign.pt")
@@ -69,20 +68,20 @@ class VideoStream:
             x1, y1, x2, y2 = map(int, box)
             cropped_image = frame[y1:y2, x1:x2]
 
-            # Convert to grayscale
-            gray_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+            # cv2.imwrite("cropped.jpg", cropped_image)
+            scaled_image = enlarge(cropped_image)
+            # cv2.imwrite("scaled.jpg", scaled_image)
+            normalized_image = normalize(scaled_image)
+            # cv2.imwrite("normal.jpg", normalized_image)
+            grayscale_image = grayscale(normalized_image)
+            # cv2.imwrite("grayscale.jpg", grayscale_image)
+            thresholded_image = image_smoothen(grayscale_image)
 
-            # Apply Gaussian blur to reduce noise
-            blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
+            # inverted_image = cv2.bitwise_not(eroded_image)
+            # cv2.imwrite("inverted.jpg", inverted_image)
 
-            # Apply thresholding
-            _, thresholded_image = cv2.threshold(blurred_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            return thresholded_image
 
-            # Resize the image to a standard size
-            resized_image = cv2.resize(thresholded_image, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-
-            return resized_image
-            
         except Exception as e:
             print(f"Error processing frame: {e}")
             return None
@@ -90,14 +89,80 @@ class VideoStream:
     def crop_and_detect_text(self, frame, box):
         processed_image = self.preprocess_image(frame, box)
         if processed_image is not None:
-            # Use Tesseract with a specific Page Segmentation Mode (PSM) for better text detection
-            custom_config = r"--oem 3 --psm 4 -c tessedit_char_whitelist=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            custom_config = r"--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789"
             image_text = pytesseract.image_to_string(
-                processed_image, config=custom_config
+                processed_image, lang="eng", config=custom_config
             )
             print(f"OCR text: {image_text}")
         else:
             print("Skipping OCR due to preprocessing error.")
+
+
+def normalize(image):
+    norm_img = np.zeros((image.shape[0], image.shape[1]))
+    normalized_image = cv2.normalize(image, norm_img, 0, 255, cv2.NORM_MINMAX)
+    return normalized_image
+
+
+def deskew(image):
+    # Check if image is empty or has no non-zero pixels
+    if np.count_nonzero(image) == 0:
+        print("Image is empty or has no non-zero pixels.")
+        return image
+
+    co_ords = np.column_stack(np.where(image > 0))
+
+    # If there are no coordinates, return the original image
+    if len(co_ords) == 0:
+        print("No non-zero pixels found.")
+        return image
+
+    # Find the minimum area rectangle
+    angle = cv2.minAreaRect(co_ords)[-1]
+
+    # Correct the angle to deskew
+    if angle < -45:
+        angle = -(90 + angle)
+    else:
+        angle = -angle
+
+    (h, w) = image.shape[:2]
+    center = (w // 2, h // 2)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    rotated_image = cv2.warpAffine(
+        image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
+    )
+    return rotated_image
+
+
+def enlarge(image):
+    height, width = image.shape[:2]
+    resized_image = cv2.resize(
+        image, (width * 3, height * 3), interpolation=cv2.INTER_LINEAR
+    )
+    return resized_image
+
+
+def grayscale(image):
+    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+
+def image_smoothen(img):
+    # Step 1: Apply binary thresholding to the input image
+    ret1, th1 = cv2.threshold(img, 88, 255, cv2.THRESH_BINARY)
+
+    # Step 2: Apply Otsu's thresholding to further enhance the binary image
+    ret2, th2 = cv2.threshold(th1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Step 3: Perform Gaussian blurring to reduce noise
+    blur = cv2.GaussianBlur(th2, (5, 5), 0)
+
+    # Step 4: Apply another Otsu's thresholding to obtain the final smoothed image
+    ret3, th3 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    denoised = cv2.fastNlMeansDenoising(th3, None, 10, 7, 21)
+
+    return denoised
 
 
 if __name__ == "__main__":
