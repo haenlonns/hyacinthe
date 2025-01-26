@@ -4,6 +4,8 @@ import os
 import base64
 from dotenv import load_dotenv
 
+from constants import *
+
 load_dotenv()
 
 client = OpenAI(
@@ -14,27 +16,13 @@ def get_room_number(command):
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You will receive a spoken number in words and you need to convert it to a numerical representation."},
-            {"role": "user", "content": f"Convert the following spoken number to a numerical representation: '{command}'. If not a number, return -1."}
+            {"role": "system", "content": "You will receive a room number to navigate to. Convert the following spoken number to a numerical representation. If not a number, return -1."},
+            {"role": "user", "content": f"Convert the following spoken room number to a numerical representation: '{command}'. If not a number, return -1."}
         ],
-        max_tokens=10
+        max_tokens=100
     )
-    return response.choices[0].message.content
-
-def get_room_information(base64_image, position):
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages = [
-            {"role": "system", "content": "You will receive an image of a room sign with a room name and number. Please only return what the room name and number are. If you're unsure, return an empty string."},
-            {"role": "user", "content": {
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-            }}
-        ],
-        max_tokens=300
-    )
-
-    return response
+    print("Check")
+    return int(response.choices[0].message.content)
 
 def find_closest_command(command, commands):
     response = client.chat.completions.create(
@@ -46,7 +34,11 @@ def find_closest_command(command, commands):
         max_tokens=300
     )
 
-    return response.choices[0].message.content
+    print(response.choices[0].message.content)
+    if(response.choices[0].message.content == "NAVIGATE"):
+        return response.choices[0].message.content, get_room_number(command)
+
+    return response.choices[0].message.content, None
 
 if __name__ == "__main__":
     print(find_closest_command("bleh bleh bleh", ["where am I", "help me find room", "try again"]))
