@@ -14,8 +14,6 @@ class DecisionManager:
 
     def add_location(self, value, position):
         self.locations.insert(0, Location(value, position))
-        if(len(self.locations) > 2):
-            self.locations.pop()
 
     def get_surrounding_locations(self):
         if(len(self.locations) == 0):
@@ -26,7 +24,7 @@ class DecisionManager:
 
     def run_vision(self):
         for result in self.vision.threaded_detect():
-            print(result)
+            self.add_location(result)
     
     def run_stt(self):
         for command in self.STT.listen():
@@ -35,8 +33,8 @@ class DecisionManager:
 
     def run(self):
         # Create and start threads for vision detection and voice command listening
-        vision_thread = threading.Thread(target=self.run_vision)
-        voice_thread = threading.Thread(target=self.run_stt)
+        vision_thread = threading.Thread(target=self.run_vision())
+        voice_thread = threading.Thread(target=self.run_stt())
 
         vision_thread.start()
         voice_thread.start()
