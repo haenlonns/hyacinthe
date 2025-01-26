@@ -1,6 +1,6 @@
 import threading
 from constants import *
-from openai import find_closest_command
+from openai import find_closest_command, get_room_number
 
 class Location:
     def __init__(self, value, position):
@@ -9,13 +9,15 @@ class Location:
 
 class DecisionManager:
 
-    commands = [SURROUNDINGS, NAVIGATE, TRYAGAIN]
+    commands = [SURROUNDINGS, NAVIGATE, CANCEL, TRYAGAIN]
 
     def __init__(self, STT, TTS, video_stream):
         self.locations = []
         self.vision = video_stream
         self.STT = STT
         self.TTS = TTS
+        self.navigation_thread = None
+        self.navigation_cancelled = threading.Event()
 
     def add_location(self, value, position):
         self.locations.insert(0, Location(value, position))
@@ -32,6 +34,24 @@ class DecisionManager:
             self.add_location(result)
     
     def navigate(self):
+        self.TTS.say("What room would you like to navigate to?")
+        destination = get_room_number(self.STT.listen())
+        self.TTS.say(f"Navigating to room {destination}. Feel free to cancel at any time.")
+        while not self.navigation_cancelled.is_set():
+            # Simulate navigation process
+            if(self.locations.length < 1):
+                self.TTS.say("I'm sorry, I don't know where you are. Please walk around a bit more so I can find where you are")
+                return
+            else:
+                if(self.locations[0].value == destination):
+                    self.TTS.say(f"Arrived at {destination}.")
+                    return
+                elif(abs(self.locations[0].value - destination) < abs(self.locations[1] - destination)):
+                    self.TTS.say("You are going the wrong way. Turn around.")
+                else:
+                    self.TTS.say("You are going the right way. Keep going.")
+            self.navigation_cancelled.wait(1)  # Check for cancellation every second
+        self.TTS.say("Navigation cancelled.")
         
 
     def run_stt(self):
@@ -41,6 +61,8 @@ class DecisionManager:
                 self.navigate()
             if(closest_command == SURROUNDINGS):
                 self.TTS.say(self.get_surrounding_locations())
+            if(closest_command == CANCEL):
+                self.navigate_cancelled.set()
             if(closest_command == TRYAGAIN):
                 self.TTS.say("I'm sorry, I didn't understand that. Please try again.")
             

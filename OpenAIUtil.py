@@ -10,6 +10,16 @@ client = OpenAI(
     api_key=os.environ.get("OPEN_AI_KEY")
 )
 
+def get_room_number(command):
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You will receive a spoken number in words and you need to convert it to a numerical representation."},
+            {"role": "user", "content": f"Convert the following spoken number to a numerical representation: '{command}'. If not a number, return -1."}
+        ],
+        max_tokens=10
+    )
+    return response.choices[0].message.content
 
 def get_room_information(base64_image, position):
     response = client.chat.completions.create(
