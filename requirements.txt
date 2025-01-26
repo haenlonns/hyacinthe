@@ -15,3 +15,5 @@ ultralytics
 python-doctr
 openai
 python-dotenv
+pytesseract
+imutils
